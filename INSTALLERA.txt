@@ -1,0 +1,30 @@
+PROTOCOLS 0.1.4 – WINDOWS X64 – TESTVERSION
+
+LADDA NER
+https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.1.4/Protocols-0.1.4-Windows-x64-Setup.exe
+
+Ingen GitHub-inloggning behövs. Filen är cirka 202 MB.
+
+INSTALLERA
+1. Öppna Protocols-0.1.4-Windows-x64-Setup.exe och följ installationsguiden.
+2. Starta Protocols från skrivbordet eller Start-menyn.
+3. Importera en checklista eller ett dokument, klistra in anteckningar eller skapa ett tomt projekt.
+4. Granska projektuppgifterna och ange uppdragsansvarig. Ingen person är förvald.
+5. Välj Excel-mapp i Inställningar om du vill ha automatisk Excel-uppföljning.
+
+Installationsfilen är ännu inte digitalt signerad. Windows kan visa en varning om okänd utgivare. På en arbetsdator kan IT behöva godkänna installationen.
+
+AI ÄR VALFRITT
+Appen fungerar utan AI-konto. För AI: öppna Inställningar → ChatGPT och anslut ditt eget konto. Kontots åtkomst och användningsgränser gäller.
+Vid import: läs först in underlaget, välj sedan Förbered med ChatGPT.
+I ett befintligt projekt: öppna AI-assistent och lägg vid behov till nya anteckningar.
+Du granskar och godkänner AI-förslagen innan projektet och kopplad Excel uppdateras.
+Projektuppgifter, checklista, arbetsanteckningar och underlag skickas till OpenAI när du startar AI. Vanligt arbete fungerar lokalt utan AI.
+
+EXCEL OCH SPARANDE
+Appen skapar en egen arbetsbok per projekt. Importerade original skrivs inte över. Ändringar i Excel läses inte tillbaka. Anpassning till en befintlig gemensam arbetsbok ingår ännu inte.
+Arbetsanteckningar, underlag och privat AI-plan utelämnas från Excel och delbar sammanställning.
+Vänta på Sparat lokalt innan du stänger appen. Fullständig säkerhetskopia finns under Inställningar. Säkerhetskopior och Excel-filer är okrypterade; förvara dem lämpligt.
+
+VERSIONER
+https://github.com/allbinbjurstrom/protocols-releases/releases
