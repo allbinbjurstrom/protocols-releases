@@ -1,0 +1,123 @@
+name: Verify Protocols Windows upgrade
+
+on:
+  workflow_dispatch:
+    inputs:
+      previous_tag:
+        description: Installed release to upgrade
+        required: true
+        default: v0.4.0
+        type: string
+      tag:
+        description: New release to install
+        required: true
+        default: v0.5.0
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  verify-upgrade:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: allbinbjurstrom/protocols-releases
+      PREVIOUS_TAG: ${{ inputs.previous_tag }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Verify installer replacement and retained user data
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $checks = [System.Collections.Generic.List[string]]::new()
+          function Assert-Check([bool]$condition, [string]$description) {
+            if (-not $condition) { throw $description }
+            $checks.Add($description)
+            Write-Host ('PASS: ' + $description)
+          }
+          function Get-Installer([string]$tag) {
+            if ($tag -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { throw 'Invalid release tag' }
+            $folder = Join-Path $env:RUNNER_TEMP $tag
+            New-Item -ItemType Directory -Path $folder -Force | Out-Null
+            gh release download $tag --pattern 'Protocols-*-Windows-x64-Setup.exe' --pattern 'update-manifest.json' --dir $folder
+            if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
+            $manifest = Get-Content (Join-Path $folder 'update-manifest.json') -Raw | ConvertFrom-Json
+            $expected = $manifest.files.'win32-x64'
+            $file = Join-Path $folder $expected.name
+            Assert-Check (('v' + $manifest.version) -eq $tag) ($tag + ' manifest matches its release')
+            Assert-Check (((Get-Item $file).Length -eq $expected.size) -and ((Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant() -eq $expected.sha256)) ($tag + ' installer matches manifest size and SHA-256')
+            return @{ file = $file; manifest = $manifest }
+          }
+          function Run-Installer([string]$file, [string[]]$installerArguments) {
+            $process = Start-Process -FilePath $file -ArgumentList $installerArguments -PassThru
+            if (-not $process.WaitForExit(180000)) { $process.Kill(); throw 'Installer timed out' }
+            Assert-Check ($process.ExitCode -eq 0) ('Installer completed: ' + (Split-Path $file -Leaf))
+          }
+          function Run-Diagnostic([string]$executable, [string]$folder, [string]$phase) {
+            $stdout = Join-Path $env:RUNNER_TEMP ($phase + '.stdout.log')
+            $stderr = Join-Path $env:RUNNER_TEMP ($phase + '.stderr.log')
+            $arguments = @('--diagnostic', '--diagnostic-onenote', ('--diagnostic-dir="' + $folder + '"'))
+            $process = Start-Process -FilePath $executable -ArgumentList $arguments -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+            if (-not $process.WaitForExit(180000)) { $process.Kill(); Get-Content $stdout; Get-Content $stderr; throw ($phase + ' timed out') }
+            Get-Content $stdout | Write-Host
+            Get-Content $stderr | Write-Host
+            Assert-Check ($process.ExitCode -eq 0) ($phase + ' diagnostic completed')
+            $report = Get-Content (Join-Path $folder ('ONENOTE-' + $phase + '.json')) -Raw | ConvertFrom-Json
+            Assert-Check $report.passed ($phase + ' restored project hierarchy, OneNote settings and local edits')
+            return $report
+          }
+          $previous = Get-Installer $env:PREVIOUS_TAG
+          $current = Get-Installer $env:RELEASE_TAG
+          $appDir = Join-Path $env:RUNNER_TEMP 'protocols-upgrade-installed'
+          Run-Installer $previous.file @('/S', ('/D=' + $appDir))
+          $executable = Join-Path $appDir 'Protocols.exe'
+          Assert-Check (Test-Path $executable) 'Previous app installed at requested path'
+          Assert-Check ((Get-Item $executable).VersionInfo.ProductVersion -eq $previous.manifest.version) 'Previous executable has expected version'
+          # The Windows runner is disposable. Use the real default data location
+          # so the test exercises the same retention rule as a user installation.
+          $dataDir = Join-Path $env:APPDATA 'OvaronProjects'
+          New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
+          $beforeReport = Run-Diagnostic $executable $dataDir 'first-run'
+          Assert-Check ($beforeReport.version -eq $previous.manifest.version) 'Fixture created by the previous release'
+          $dataFile = Join-Path $dataDir 'workspace.bin'
+          $workspaceHash = (Get-FileHash $dataFile -Algorithm SHA256).Hash
+          $backups = @(Get-ChildItem (Join-Path $dataDir 'backups') -File | ForEach-Object { @{ name = $_.Name; sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash } })
+          $probe = Join-Path $dataDir 'install-retention-probe.txt'
+          Set-Content $probe 'Retain user data during an app upgrade' -Encoding utf8
+          $legacyMarker = Join-Path $appDir 'legacy-version-marker.txt'
+          Set-Content $legacyMarker 'Remove files belonging to the previous app version' -Encoding utf8
+
+          # No /D override: the new installer must find the existing installation.
+          Run-Installer $current.file @('/S')
+          Assert-Check (Test-Path $executable) 'Upgrade reuses the existing installation directory'
+          Assert-Check ((Get-Item $executable).VersionInfo.ProductVersion -eq $current.manifest.version) 'Previous executable replaced by the new version'
+          Assert-Check (-not (Test-Path $legacyMarker)) 'Previous app files removed during upgrade'
+          Assert-Check ((Test-Path $dataFile) -and ((Get-FileHash $dataFile -Algorithm SHA256).Hash -eq $workspaceHash)) 'Encrypted projects and settings preserved byte for byte by installer'
+          Assert-Check (Test-Path $probe) 'Other files in the user data directory retained'
+          foreach ($backup in $backups) {
+            $file = Join-Path (Join-Path $dataDir 'backups') $backup.name
+            Assert-Check ((Test-Path $file) -and ((Get-FileHash $file -Algorithm SHA256).Hash -eq $backup.sha256)) ('Existing workspace backup preserved: ' + $backup.name)
+          }
+          $registryRoots = @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall', 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall', 'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall')
+          $entries = @($registryRoots | ForEach-Object { if (Test-Path $_) { Get-ChildItem $_ | Get-ItemProperty | Where-Object { $_.DisplayName -eq 'Protocols' } } })
+          Assert-Check (($entries.Count -eq 1) -and ($entries[0].DisplayVersion -eq $current.manifest.version)) 'Windows lists one Protocols installation with the new version'
+          $afterReport = Run-Diagnostic $executable $dataDir 'restart'
+          Assert-Check ($afterReport.version -eq $current.manifest.version) 'Updated app decrypts and opens the previous workspace'
+          $result = @{
+            previousVersion = $previous.manifest.version
+            version = $current.manifest.version
+            platform = 'win32-x64'
+            passed = $true
+            installerSha256 = $current.manifest.files.'win32-x64'.sha256
+            previousInstallerSha256 = $previous.manifest.files.'win32-x64'.sha256
+            checks = @($checks)
+            beforeUpgrade = $beforeReport
+            afterUpgrade = $afterReport
+            workflowRun = ('https://github.com/' + $env:GITHUB_REPOSITORY + '/actions/runs/' + $env:GITHUB_RUN_ID)
+          }
+          $reportFile = Join-Path $env:RUNNER_TEMP 'windows-upgrade-verification.json'
+          $result | ConvertTo-Json -Depth 10 | Set-Content $reportFile -Encoding utf8
+          gh release upload $env:RELEASE_TAG $reportFile --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Uploading upgrade verification failed' }
