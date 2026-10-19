@@ -74,7 +74,8 @@ jobs:
           Run-Installer $previous.file @('/S', ('/D=' + $appDir))
           $executable = Join-Path $appDir 'Protocols.exe'
           Assert-Check (Test-Path $executable) 'Previous app installed at requested path'
-          $previousExecutableHash = (Get-FileHash $executable -Algorithm SHA256).Hash
+          $appResources = Join-Path $appDir 'resources\app.asar'
+          $previousResourcesHash = (Get-FileHash $appResources -Algorithm SHA256).Hash
           # The Windows runner is disposable. Use the real default data location
           # so the test exercises the same retention rule as a user installation.
           $dataDir = Join-Path $env:APPDATA 'OvaronProjects'
@@ -92,7 +93,7 @@ jobs:
           # No /D override: the new installer must find the existing installation.
           Run-Installer $current.file @('/S')
           Assert-Check (Test-Path $executable) 'Upgrade reuses the existing installation directory'
-          Assert-Check ((Get-FileHash $executable -Algorithm SHA256).Hash -ne $previousExecutableHash -or (Test-Path (Join-Path $appDir 'resources\app.asar'))) 'Replacement app executable and resources installed'
+          Assert-Check ((Get-FileHash $appResources -Algorithm SHA256).Hash -ne $previousResourcesHash) 'Previous app resources replaced by the new release'
           Assert-Check (-not (Test-Path $legacyMarker)) 'Previous app files removed during upgrade'
           Assert-Check ((Test-Path $dataFile) -and ((Get-FileHash $dataFile -Algorithm SHA256).Hash -eq $workspaceHash)) 'Encrypted projects and settings preserved byte for byte by installer'
           Assert-Check (Test-Path $probe) 'Other files in the user data directory retained'
@@ -101,7 +102,8 @@ jobs:
             Assert-Check ((Test-Path $file) -and ((Get-FileHash $file -Algorithm SHA256).Hash -eq $backup.sha256)) ('Existing workspace backup preserved: ' + $backup.name)
           }
           $registryRoots = @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall', 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall', 'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall')
-          $entries = @($registryRoots | ForEach-Object { if (Test-Path $_) { Get-ChildItem $_ | Get-ItemProperty | Where-Object { $_.DisplayName -eq 'Protocols' } } })
+          $entries = @($registryRoots | ForEach-Object { if (Test-Path $_) { Get-ChildItem $_ | Get-ItemProperty | Where-Object { $_.DisplayName -match '^Protocols(?:\s|$)' } } })
+          $entries | Select-Object DisplayName, DisplayVersion, InstallLocation | ConvertTo-Json | Write-Host
           Assert-Check (($entries.Count -eq 1) -and ($entries[0].DisplayVersion -eq $current.manifest.version)) 'Windows lists one Protocols installation with the new version'
           $afterReport = Run-Diagnostic $executable $dataDir 'restart'
           Assert-Check ($afterReport.version -eq $current.manifest.version) 'Updated app decrypts and opens the previous workspace'
