@@ -1,30 +1,40 @@
-PROTOCOLS 0.1.4 – WINDOWS X64 – TESTVERSION
+PROTOCOLS 0.5.0
 
-LADDA NER
-https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.1.4/Protocols-0.1.4-Windows-x64-Setup.exe
+Har du redan Protocols 0.4.0 eller senare?
+Öppna Inställningar → Appuppdateringar → Sök efter uppdateringar.
+Version 0.5.0 hämtas automatiskt. Avsluta appen när allt är sparat,
+eller välj Starta om och uppdatera. Dina projekt ligger kvar.
 
-Ingen GitHub-inloggning behövs. Filen är cirka 202 MB.
+WINDOWS X64
+Hämta Protocols-0.5.0-Windows-x64-Setup.exe och kör installationsfilen.
+Den installerar för ditt Windows-konto. Tidigare arbetsyta i
+OvaronProjects behålls. Installationsfilen saknar Authenticode-certifikat.
 
-INSTALLERA
-1. Öppna Protocols-0.1.4-Windows-x64-Setup.exe och följ installationsguiden.
-2. Starta Protocols från skrivbordet eller Start-menyn.
-3. Importera en checklista eller ett dokument, klistra in anteckningar eller skapa ett tomt projekt.
-4. Granska projektuppgifterna och ange uppdragsansvarig. Ingen person är förvald.
-5. Välj Excel-mapp i Inställningar om du vill ha automatisk Excel-uppföljning.
+MAC MED APPLE SILICON
+Hämta Protocols-0.5.0-Mac-arm64.zip och packa upp den.
+Avsluta en tidigare Protocols-version och ersätt Protocols.app i
+din programmapp. Arbetsytan ligger utanför appen och behålls.
+Appen är lokalt signerad men inte Apple-notariserad. Följ organisationens
+installationsrutin. macOS kan begära ett nytt nyckelringsgodkännande.
 
-Installationsfilen är ännu inte digitalt signerad. Windows kan visa en varning om okänd utgivare. På en arbetsdator kan IT behöva godkänna installationen.
+LEDNINGSÖVERSIKT OCH AUTOSYNK
+Öppna Inställningar → Öppna ledningsöversikt.
+Välj Konfigurera autosynk, en källmapp med exporterade OneNote-checklistor
+och en Excel-mapp. Aktivera automatisk synkning och välj intervall.
+Synkningen körs medan appen är öppen.
 
-AI ÄR VALFRITT
-Appen fungerar utan AI-konto. För AI: öppna Inställningar → ChatGPT och anslut ditt eget konto. Kontots åtkomst och användningsgränser gäller.
-Vid import: läs först in underlaget, välj sedan Förbered med ChatGPT.
-I ett befintligt projekt: öppna AI-assistent och lägg vid behov till nya anteckningar.
-Du granskar och godkänner AI-förslagen innan projektet och kopplad Excel uppdateras.
-Projektuppgifter, checklista, arbetsanteckningar och underlag skickas till OpenAI när du startar AI. Vanligt arbete fungerar lokalt utan AI.
+Källformat: HTML/HTM, MHT/MHTML, DOCX, PDF med text och TXT.
+Sidorna behöver appens 21 kontrollpunkter, unikt objektnummer och ansvarig.
+Ursprungliga .one-filer och OneNote-genvägar behöver exporteras först.
+Vid OneDrive: gör källfilerna tillgängliga lokalt och låt OneDrive synka dem.
+Stäng Excel-filerna före synkning.
 
-EXCEL OCH SPARANDE
-Appen skapar en egen arbetsbok per projekt. Importerade original skrivs inte över. Ändringar i Excel läses inte tillbaka. Anpassning till en befintlig gemensam arbetsbok ingår ännu inte.
-Arbetsanteckningar, underlag och privat AI-plan utelämnas från Excel och delbar sammanställning.
-Vänta på Sparat lokalt innan du stänger appen. Fullständig säkerhetskopia finns under Inställningar. Säkerhetskopior och Excel-filer är okrypterade; förvara dem lämpligt.
+Varje synkat objekt får en Excel-fil. Protocols-Ledningsoversikt.xlsx
+samlar alla objekt, kontrollpunkter och synkproblem. Arbetsanteckningar
+och källsidornas fullständiga text sparas privat i appen.
 
-VERSIONER
-https://github.com/allbinbjurstrom/protocols-releases/releases
+Läs Ledningsoversikt.md för hela guiden.
+OneNote-mall.html innehåller checklistmallen.
+OneNote-anslutning.md beskriver appens separata Microsoft-anslutning.
+
+Uppdateringsmanifest, signatur och kontrollsummor följer med utgåvan.
