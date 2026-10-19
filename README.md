@@ -1,63 +1,53 @@
 # Protocols för Mac och Windows
 
-Projektchecklistor, ledningsöversikt och automatisk Excel-uppföljning.
+Projektchecklistor med lokal OneNote-import och automatisk Excel-uppföljning.
 
-**[Senaste versionen: Protocols 0.5.0](https://github.com/allbinbjurstrom/protocols-releases/releases/tag/v0.5.0)**
+**[Senaste versionen: Protocols 0.5.1](https://github.com/allbinbjurstrom/protocols-releases/releases/tag/v0.5.1)**
 
-- [Windows x64 – installationsfil](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.0/Protocols-0.5.0-Windows-x64-Setup.exe)
-- [Mac med Apple Silicon – packa upp appen](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.0/Protocols-0.5.0-Mac-arm64.zip)
+- [Windows x64 – installationsfil](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.1/Protocols-0.5.1-Windows-x64-Setup.exe)
+- [Mac med Apple Silicon – packa upp appen](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.1/Protocols-0.5.1-Mac-arm64.zip)
 - [Installationsguide](INSTALLERA.txt)
 
 ## Installera på Windows
 
-[Hämta installationsfilen för Windows x64](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.0/Protocols-0.5.0-Windows-x64-Setup.exe),
-avsluta Protocols och kör filen i samma Windows-konto som tidigare.
-Installationen hittar och avinstallerar den tidigare programversionen innan den
-nya läggs in. Projekt, inställningar och lokala säkerhetskopior behålls.
-Du behöver inte avinstallera appen själv före uppgradering.
-[Uppgraderingen från 0.4.0 till 0.5.0 har verifierats på Windows](https://github.com/allbinbjurstrom/protocols-releases/actions/runs/39212736856).
+Avsluta Protocols och kör installationsfilen i samma Windows-konto som tidigare.
+Den gamla programversionen tas bort automatiskt. Projekt, inställningar och
+lokala säkerhetskopior behålls.
 
-## Automatisk uppdatering
+Protocols 0.4.0 och senare kan även hämta nya versioner från
+**Inställningar → Appuppdateringar**. Uppdateringarna verifieras med en signerad
+filförteckning och SHA-256 innan de installeras.
 
-Protocols 0.4.0 och senare kan hämta nya stabila versioner automatiskt.
-Kontrollera **Inställningar → Appuppdateringar**. Där finns också **Sök efter
-uppdateringar** och **Starta om och uppdatera**. Appen kontrollerar signatur,
-filstorlek, plattform och SHA-256 före installation. Arbetet ska vara sparat
-innan uppdateringen installeras. Äldre versioner behöver uppgraderas manuellt.
+## Arbeta med lokala projekt
 
-## Kom igång
+Börja med **Importera → OneNote** eller **Ny fil**. Klistra in checklistan eller
+välj en exporterad lokal OneNote-sida. Granska innehållet och spara projektet.
+Projekt, importerat underlag och privata arbetsanteckningar lagras lokalt och
+krypteras för datorkontot. Ingen Microsoft-appregistrering, tenant-ID eller
+app-ID behövs. Tidigare importerade projekt finns kvar efter uppgradering.
 
-1. Börja med **OneNote** eller **Ny fil** och fyll i projektuppgifterna.
-2. Följ checklistans 21 kontrollpunkter från anbud till avslut.
-3. Koppla Excel för automatisk uppföljning eller exportera en separat kopia.
-4. Öppna **Inställningar → Öppna ledningsöversikt** för att följa alla projekt,
-   ansvariga, skeden, uppdragsvärden och framsteg i arbetsytan.
+Sidomenyn följer arbetets sju steg från import till **Gemensam Excel**.
+Sidorna Överblick, Huvudprojekt och direkt OneNote-anslutning har tagits bort.
+Appen öppnar det sparade projektet direkt vid start.
 
-## Autosynk från OneNote-mapp
+## Ledningsöversikt och autosynk
 
-Välj **Konfigurera autosynk**. Ange källmappen med exporterade
-OneNote-checklistor, välj en Excel-mapp och aktivera automatisk synkning.
-Undermappar kan ingå som huvudprojekt. Varje objekt får en egen Excel-fil och
-**Protocols-Ledningsoversikt.xlsx** samlar alla objekt, kontrollpunkter och
-synkproblem. Synkningen körs med valt intervall medan appen är öppen.
+Öppna ledningsöversikten från **Inställningar**. Där finns även autosynk från en
+lokal eller OneDrive-synkad mapp med exporterade OneNote-checklistor. Välj
+källmapp, Excel-mapp och intervall. Synkningen körs medan appen är öppen.
+Varje objekt får en Excel-fil och Protocols-Ledningsoversikt.xlsx samlar
+uppföljningen. [Läs guiden](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.1/Ledningsoversikt.md).
 
-Källfiler kan vara HTML, HTM, MHT/MHTML, DOCX, PDF med text eller TXT och behöver
-appens fullständiga checklistmall. `.one`-filer och OneNote-genvägar behöver
-exporteras först. Vid OneDrive ska filerna finnas tillgängliga lokalt;
-OneDrive sköter molnsynkningen. Läs [guiden för ledningsöversikt och
-autosynk](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.0/Ledningsoversikt.md).
+OneNote-exporterna kan vara HTML/HTM, MHT/MHTML, DOCX, PDF med text eller TXT
+med appens fullständiga checklistmall. .one-filer och OneNote-genvägar behöver
+exporteras först. Filer på OneDrive ska finnas tillgängliga lokalt.
 
 ## Valfri AI och lagring
 
-Appen fungerar utan AI. Valfri ChatGPT-hjälp förbereder projekt och arbetsutkast
-som du granskar innan de sparas. Projektuppgifter, checklista, arbetsanteckningar
-och valt underlag skickas till OpenAI först när du startar en AI-genomgång.
+Appen fungerar utan AI. Valfri ChatGPT-hjälp startas av användaren och kräver
+att förslagen granskas innan de sparas. Arbetsanteckningar, källtext och privata
+AI-utkast utelämnas från Excel och delbara sammanställningar.
 
-Arbetsytan lagras lokalt och krypteras för datorns användarkonto. Arbetsanteckningar,
-källsidornas fullständiga text och privata AI-utkast utelämnas från Excel och
-delbara sammanställningar. Exporterade säkerhetskopior och Excel-filer är
-vanliga filer. Ändringar i Excel läses inte tillbaka till appen.
-
-Mac-appen är lokalt signerad men inte Apple-notariserad. Windows-installationen
-saknar Authenticode-certifikat. Följ organisationens installationsrutin.
+Windows-installationen saknar Authenticode-certifikat. Mac-appen är lokalt
+signerad men inte Apple-notariserad. Följ organisationens installationsrutin.
 Kontrollsummor finns i [SHA256SUMS.txt](SHA256SUMS.txt).

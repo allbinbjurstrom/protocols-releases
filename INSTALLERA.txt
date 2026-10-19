@@ -1,43 +1,32 @@
-PROTOCOLS 0.5.0
-
-Har du redan Protocols 0.4.0 eller senare?
-Öppna Inställningar → Appuppdateringar → Sök efter uppdateringar.
-Version 0.5.0 hämtas automatiskt. Avsluta appen när allt är sparat,
-eller välj Starta om och uppdatera. Dina projekt ligger kvar.
+PROTOCOLS 0.5.1
 
 WINDOWS X64
-Hämta Protocols-0.5.0-Windows-x64-Setup.exe, avsluta Protocols och kör filen.
-Den installerar för ditt Windows-konto och hittar den befintliga installationen.
-Den tidigare programversionen avinstalleras automatiskt innan den nya läggs in.
-Projekt, inställningar och säkerhetskopior i OvaronProjects behålls.
-Du behöver inte avinstallera appen själv före uppgradering.
+Avsluta Protocols och kör Protocols-0.5.1-Windows-x64-Setup.exe i samma
+Windows-konto som tidigare. Installationen hittar och tar bort den tidigare
+programversionen automatiskt. Projekt, inställningar och lokala säkerhetskopior
+i OvaronProjects behålls. Du behöver inte avinstallera appen själv.
 Installationsfilen saknar Authenticode-certifikat.
 
+AUTOMATISK UPPDATERING
+Protocols 0.4.0 och senare kan hämta denna utgåva via
+Inställningar → Appuppdateringar → Sök efter uppdateringar.
+Spara arbetet och välj Starta om och uppdatera, eller avsluta appen.
+
+LOKAL ONENOTE-IMPORT
+Välj Importera → OneNote. Klistra in checklistan eller välj en exporterad
+sida. Granska och spara projektet. Underlaget sparas lokalt och originalet
+ändras inte. Ingen Microsoft-appregistrering, tenant-ID eller app-ID behövs.
+Du kan också välja en lokal eller OneDrive-synkad källmapp i inställningarna
+för autosynk. .one-filer och OneNote-genvägar behöver exporteras först.
+
+MENYN
+Gemensam Excel ligger sist i arbetsflödet, som steg 7.
+Överblick, Huvudprojekt och sidan för direkt OneNote-anslutning är borttagna.
+Dina sparade projekt finns i sidomenyn. Appen öppnar det sparade projektet
+direkt när den startas. Ledningsöversikten finns kvar i Inställningar.
+
 MAC MED APPLE SILICON
-Hämta Protocols-0.5.0-Mac-arm64.zip och packa upp den.
-Avsluta en tidigare Protocols-version och ersätt Protocols.app i
-din programmapp. Arbetsytan ligger utanför appen och behålls.
+Packa upp Protocols-0.5.1-Mac-arm64.zip. Avsluta den gamla appen och ersätt
+Protocols.app i samma programmapp. Projekt och inställningar behålls.
 Appen är lokalt signerad men inte Apple-notariserad. Följ organisationens
 installationsrutin. macOS kan begära ett nytt nyckelringsgodkännande.
-
-LEDNINGSÖVERSIKT OCH AUTOSYNK
-Öppna Inställningar → Öppna ledningsöversikt.
-Välj Konfigurera autosynk, en källmapp med exporterade OneNote-checklistor
-och en Excel-mapp. Aktivera automatisk synkning och välj intervall.
-Synkningen körs medan appen är öppen.
-
-Källformat: HTML/HTM, MHT/MHTML, DOCX, PDF med text och TXT.
-Sidorna behöver appens 21 kontrollpunkter, unikt objektnummer och ansvarig.
-Ursprungliga .one-filer och OneNote-genvägar behöver exporteras först.
-Vid OneDrive: gör källfilerna tillgängliga lokalt och låt OneDrive synka dem.
-Stäng Excel-filerna före synkning.
-
-Varje synkat objekt får en Excel-fil. Protocols-Ledningsoversikt.xlsx
-samlar alla objekt, kontrollpunkter och synkproblem. Arbetsanteckningar
-och källsidornas fullständiga text sparas privat i appen.
-
-Läs Ledningsoversikt.md för hela guiden.
-OneNote-mall.html innehåller checklistmallen.
-OneNote-anslutning.md beskriver appens separata Microsoft-anslutning.
-
-Uppdateringsmanifest, signatur och kontrollsummor följer med utgåvan.
