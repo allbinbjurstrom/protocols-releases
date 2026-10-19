@@ -1,0 +1,81 @@
+name: Verify Protocols Windows local workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to verify
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  verify-local-workflow:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: allbinbjurstrom/protocols-releases
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Download and verify installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { throw 'Invalid release tag' }
+          $packageDir = Join-Path $env:RUNNER_TEMP 'protocols-package'
+          New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
+          gh release download $env:RELEASE_TAG --pattern 'Protocols-*-Windows-x64-Setup.exe' --pattern 'update-manifest.json' --pattern 'verification-fixtures.zip' --dir $packageDir
+          if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
+          $manifest = Get-Content (Join-Path $packageDir 'update-manifest.json') -Raw | ConvertFrom-Json
+          if ('v' + $manifest.version -ne $env:RELEASE_TAG) { throw 'Manifest version differs from tag' }
+          $expected = $manifest.files.'win32-x64'
+          $installer = Join-Path $packageDir $expected.name
+          if ((Get-Item $installer).Length -ne $expected.size) { throw 'Installer size mismatch' }
+          if ((Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected.sha256) { throw 'Installer SHA-256 mismatch' }
+
+      - name: Install and test first start and restart
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $packageDir = Join-Path $env:RUNNER_TEMP 'protocols-package'
+          $manifest = Get-Content (Join-Path $packageDir 'update-manifest.json') -Raw | ConvertFrom-Json
+          $installer = Join-Path $packageDir $manifest.files.'win32-x64'.name
+          $appDir = Join-Path $env:RUNNER_TEMP 'protocols-installed'
+          $installerProcess = Start-Process -FilePath $installer -ArgumentList @('/S', ('/D=' + $appDir)) -PassThru
+          if (-not $installerProcess.WaitForExit(180000)) { $installerProcess.Kill(); throw 'Installer timed out' }
+          if ($installerProcess.ExitCode -ne 0) { throw ('Installer failed: ' + $installerProcess.ExitCode) }
+          $executable = Join-Path $appDir 'Protocols.exe'
+          if (-not (Test-Path $executable)) { throw 'Installed executable was not found' }
+          Get-Process -Name Protocols -ErrorAction SilentlyContinue | Stop-Process -Force
+          $verifyDir = Join-Path $env:RUNNER_TEMP 'protocols-local-verification'
+          New-Item -ItemType Directory -Path $verifyDir -Force | Out-Null
+          Expand-Archive (Join-Path $packageDir 'verification-fixtures.zip') -DestinationPath $verifyDir
+          $reports = @()
+          foreach ($phase in @('first-run', 'restart')) {
+            $stdout = Join-Path $verifyDir ($phase + '.stdout.log')
+            $stderr = Join-Path $verifyDir ($phase + '.stderr.log')
+            $arguments = @('--diagnostic', '--diagnostic-ai', ('--diagnostic-dir="' + $verifyDir + '"'))
+            $testProcess = Start-Process -FilePath $executable -ArgumentList $arguments -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+            if (-not $testProcess.WaitForExit(180000)) { $testProcess.Kill(); Get-Content $stdout; Get-Content $stderr; throw ($phase + ' timed out') }
+            Get-Content $stdout
+            Get-Content $stderr
+            if ($testProcess.ExitCode -ne 0) { throw ($phase + ' failed: ' + $testProcess.ExitCode) }
+            $report = Get-Content (Join-Path $verifyDir ('VERIFICATION-' + $phase + '.json')) -Raw | ConvertFrom-Json
+            if (-not $report.passed -or 'v' + $report.version -ne $env:RELEASE_TAG) { throw ($phase + ' did not pass for the release version') }
+            $reports += @{ phase = $phase; passed = $report.passed; checks = $report.checks }
+          }
+          $result = @{
+            version = $manifest.version
+            platform = 'win32-x64'
+            runtimeTested = $true
+            passed = $true
+            installerSha256 = $manifest.files.'win32-x64'.sha256
+            workflowRun = ('https://github.com/' + $env:GITHUB_REPOSITORY + '/actions/runs/' + $env:GITHUB_RUN_ID)
+            reports = $reports
+          }
+          $result | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $verifyDir 'windows-workflow-verification.json') -Encoding utf8
+          gh release upload $env:RELEASE_TAG (Join-Path $verifyDir 'windows-workflow-verification.json') --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Uploading verification report failed' }
