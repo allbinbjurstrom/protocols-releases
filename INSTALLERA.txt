@@ -6,9 +6,12 @@ Version 0.5.0 hämtas automatiskt. Avsluta appen när allt är sparat,
 eller välj Starta om och uppdatera. Dina projekt ligger kvar.
 
 WINDOWS X64
-Hämta Protocols-0.5.0-Windows-x64-Setup.exe och kör installationsfilen.
-Den installerar för ditt Windows-konto. Tidigare arbetsyta i
-OvaronProjects behålls. Installationsfilen saknar Authenticode-certifikat.
+Hämta Protocols-0.5.0-Windows-x64-Setup.exe, avsluta Protocols och kör filen.
+Den installerar för ditt Windows-konto och hittar den befintliga installationen.
+Den tidigare programversionen avinstalleras automatiskt innan den nya läggs in.
+Projekt, inställningar och säkerhetskopior i OvaronProjects behålls.
+Du behöver inte avinstallera appen själv före uppgradering.
+Installationsfilen saknar Authenticode-certifikat.
 
 MAC MED APPLE SILICON
 Hämta Protocols-0.5.0-Mac-arm64.zip och packa upp den.

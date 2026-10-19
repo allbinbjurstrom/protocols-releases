@@ -8,6 +8,15 @@ Projektchecklistor, ledningsöversikt och automatisk Excel-uppföljning.
 - [Mac med Apple Silicon – packa upp appen](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.0/Protocols-0.5.0-Mac-arm64.zip)
 - [Installationsguide](INSTALLERA.txt)
 
+## Installera på Windows
+
+[Hämta installationsfilen för Windows x64](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.0/Protocols-0.5.0-Windows-x64-Setup.exe),
+avsluta Protocols och kör filen i samma Windows-konto som tidigare.
+Installationen hittar och avinstallerar den tidigare programversionen innan den
+nya läggs in. Projekt, inställningar och lokala säkerhetskopior behålls.
+Du behöver inte avinstallera appen själv före uppgradering.
+[Uppgraderingen från 0.4.0 till 0.5.0 har verifierats på Windows](https://github.com/allbinbjurstrom/protocols-releases/actions/runs/39212736856).
+
 ## Automatisk uppdatering
 
 Protocols 0.4.0 och senare kan hämta nya stabila versioner automatiskt.
