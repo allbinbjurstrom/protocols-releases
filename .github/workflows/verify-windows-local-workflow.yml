@@ -79,3 +79,30 @@ jobs:
           $result | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $verifyDir 'windows-workflow-verification.json') -Encoding utf8
           gh release upload $env:RELEASE_TAG (Join-Path $verifyDir 'windows-workflow-verification.json') --clobber
           if ($LASTEXITCODE -ne 0) { throw 'Uploading verification report failed' }
+
+      - name: Verify native OneNote clipboard import
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $packageDir = Join-Path $env:RUNNER_TEMP 'protocols-package'
+          $manifest = Get-Content (Join-Path $packageDir 'update-manifest.json') -Raw | ConvertFrom-Json
+          if ([version]$manifest.version -lt [version]'0.5.2') { Write-Host 'Native clipboard diagnostic starts with 0.5.2'; exit 0 }
+          $executable = Join-Path (Join-Path $env:RUNNER_TEMP 'protocols-installed') 'Protocols.exe'
+          $verifyDir = Join-Path $env:RUNNER_TEMP 'protocols-onenote-import-verification'
+          New-Item -ItemType Directory -Path $verifyDir -Force | Out-Null
+          $stdout = Join-Path $verifyDir 'import.stdout.log'
+          $stderr = Join-Path $verifyDir 'import.stderr.log'
+          $arguments = @('--diagnostic', '--diagnostic-import', ('--diagnostic-dir="' + $verifyDir + '"'))
+          $testProcess = Start-Process -FilePath $executable -ArgumentList $arguments -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          if (-not $testProcess.WaitForExit(180000)) { $testProcess.Kill(); Get-Content $stdout; Get-Content $stderr; throw 'OneNote clipboard diagnostic timed out' }
+          Get-Content $stdout
+          Get-Content $stderr
+          if ($testProcess.ExitCode -ne 0) { throw ('OneNote clipboard diagnostic failed: ' + $testProcess.ExitCode) }
+          $report = Get-Content (Join-Path $verifyDir 'IMPORT-VERIFICATION.json') -Raw | ConvertFrom-Json
+          if (-not $report.passed -or 'v' + $report.version -ne $env:RELEASE_TAG -or $report.platform -ne 'win32') { throw 'Native clipboard import did not pass for this Windows release' }
+          $report | Add-Member -NotePropertyName installerSha256 -NotePropertyValue $manifest.files.'win32-x64'.sha256
+          $report | Add-Member -NotePropertyName workflowRun -NotePropertyValue ('https://github.com/' + $env:GITHUB_REPOSITORY + '/actions/runs/' + $env:GITHUB_RUN_ID)
+          $reportFile = Join-Path $verifyDir 'windows-import-verification.json'
+          $report | ConvertTo-Json -Depth 10 | Set-Content $reportFile -Encoding utf8
+          gh release upload $env:RELEASE_TAG $reportFile --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Uploading native clipboard verification failed' }
