@@ -64,6 +64,13 @@ jobs:
             @{ Name = 'desktop'; Dir = $desktopDir; Extra = @('--diagnostic-desktop'); Report = 'DESKTOP-VERIFICATION.json' },
             @{ Name = 'desktop-background'; Dir = $desktopDir; Extra = @('--diagnostic-desktop-background', '--onenote-background'); Report = 'DESKTOP-BACKGROUND-VERIFICATION.json' }
           )
+          if ([version]$manifest.version -ge [version]'0.8.0') {
+            $cases = @(
+              @{ Name = 'reader'; Dir = $desktopDir; Extra = @('--diagnostic-reader'); Report = 'READER-VERIFICATION.json' },
+              @{ Name = 'reader-restart'; Dir = $desktopDir; Extra = @('--diagnostic-reader-restart'); Report = 'READER-RESTART-VERIFICATION.json' },
+              @{ Name = 'desktop-background'; Dir = $desktopDir; Extra = @('--diagnostic-desktop-background', '--onenote-background'); Report = 'DESKTOP-BACKGROUND-VERIFICATION.json' }
+            )
+          }
           $reports = @()
           foreach ($case in $cases) {
             New-Item -ItemType Directory -Path $case.Dir -Force | Out-Null
@@ -78,7 +85,8 @@ jobs:
             $report = Get-Content (Join-Path $case.Dir $case.Report) -Raw | ConvertFrom-Json
             if (-not $report.passed -or $report.version -ne $manifest.version) { throw ($case.Name + ' failed for this version') }
             if ($case.Name -eq 'ui' -and (-not $report.preview -or $report.platform -ne 'win32')) { throw 'UI test did not run the Windows preview' }
-            if ($case.Name -eq 'desktop' -and (-not $report.windowsTaskSchedulerTested -or $report.platform -ne 'win32')) { throw 'The actual Windows Task Scheduler was not tested' }
+            if ($case.Name -in @('desktop', 'reader', 'reader-restart') -and (-not $report.windowsTaskSchedulerTested -or $report.platform -ne 'win32')) { throw 'The actual Windows Task Scheduler was not tested' }
+            if ($case.Name -eq 'reader' -and -not $report.preview) { throw 'The installed read-only app is not the preview' }
             $reports += @{ phase = $case.Name; passed = $report.passed; checks = $report.checks }
           }
           $result = @{
