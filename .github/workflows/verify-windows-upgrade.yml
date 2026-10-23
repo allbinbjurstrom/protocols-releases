@@ -6,12 +6,12 @@ on:
       previous_tag:
         description: Installed release to upgrade
         required: true
-        default: v0.4.0
+        default: v0.5.2
         type: string
       tag:
         description: New release to install
         required: true
-        default: v0.5.0
+        default: v0.8.0
         type: string
 
 permissions:
@@ -54,18 +54,25 @@ jobs:
             $process = Start-Process -FilePath $file -ArgumentList $installerArguments -PassThru
             if (-not $process.WaitForExit(180000)) { $process.Kill(); throw 'Installer timed out' }
             Assert-Check ($process.ExitCode -eq 0) ('Installer completed: ' + (Split-Path $file -Leaf))
+            Get-Process -Name Protocols -ErrorAction SilentlyContinue | Stop-Process -Force
           }
           function Run-Diagnostic([string]$executable, [string]$folder, [string]$phase) {
             $stdout = Join-Path $env:RUNNER_TEMP ($phase + '.stdout.log')
             $stderr = Join-Path $env:RUNNER_TEMP ($phase + '.stderr.log')
-            $arguments = @('--diagnostic', '--diagnostic-onenote', ('--diagnostic-dir="' + $folder + '"'))
+            if ($phase -eq 'first-run') {
+              $arguments = @('--diagnostic', '--diagnostic-ai', ('--diagnostic-dir="' + $folder + '"'))
+              $reportName = 'VERIFICATION-first-run.json'
+            } else {
+              $arguments = @('--diagnostic', '--diagnostic-reader-migration', ('--diagnostic-dir="' + $folder + '"'))
+              $reportName = 'READER-MIGRATION-VERIFICATION.json'
+            }
             $process = Start-Process -FilePath $executable -ArgumentList $arguments -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
             if (-not $process.WaitForExit(180000)) { $process.Kill(); Get-Content $stdout; Get-Content $stderr; throw ($phase + ' timed out') }
             Get-Content $stdout | Write-Host
             Get-Content $stderr | Write-Host
             Assert-Check ($process.ExitCode -eq 0) ($phase + ' diagnostic completed')
-            $report = Get-Content (Join-Path $folder ('ONENOTE-' + $phase + '.json')) -Raw | ConvertFrom-Json
-            Assert-Check $report.passed ($phase + ' restored project hierarchy, OneNote settings and local edits')
+            $report = Get-Content (Join-Path $folder $reportName) -Raw | ConvertFrom-Json
+            Assert-Check $report.passed ($phase + ' preserves projects, source metadata, settings and historical private notes')
             return $report
           }
           $previous = Get-Installer $env:PREVIOUS_TAG
@@ -80,6 +87,9 @@ jobs:
           # so the test exercises the same retention rule as a user installation.
           $dataDir = Join-Path $env:APPDATA 'OvaronProjects'
           New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
+          gh release download $env:RELEASE_TAG --pattern 'verification-fixtures.zip' --dir $env:RUNNER_TEMP
+          if ($LASTEXITCODE -ne 0) { throw 'Fixture download failed' }
+          Expand-Archive (Join-Path $env:RUNNER_TEMP 'verification-fixtures.zip') -DestinationPath $dataDir
           $beforeReport = Run-Diagnostic $executable $dataDir 'first-run'
           Assert-Check ($beforeReport.version -eq $previous.manifest.version) 'Fixture created by the previous release'
           $dataFile = Join-Path $dataDir 'workspace.bin'
