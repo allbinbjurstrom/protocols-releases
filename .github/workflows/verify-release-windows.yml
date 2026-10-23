@@ -53,23 +53,42 @@ jobs:
           $verifyDir = Join-Path $env:RUNNER_TEMP 'protocols-management-verification'
           New-Item -ItemType Directory -Path $verifyDir -Force | Out-Null
           $reports = @()
-          foreach ($phase in @('first-run', 'restart')) {
+          $cases = @(
+            @{ Name = 'first-run'; Extra = @('--diagnostic-management'); Report = 'VERIFICATION-management.json' },
+            @{ Name = 'restart'; Extra = @('--diagnostic-management'); Report = 'VERIFICATION-management.json' }
+          )
+          if ([version]$manifest.version -ge [version]'0.8.0') {
+            $cases = @(
+              @{ Name = 'reader'; Extra = @('--diagnostic-reader'); Report = 'READER-VERIFICATION.json' },
+              @{ Name = 'reader-restart'; Extra = @('--diagnostic-reader-restart'); Report = 'READER-RESTART-VERIFICATION.json' },
+              @{ Name = 'desktop-background'; Extra = @('--diagnostic-desktop-background', '--onenote-background'); Report = 'DESKTOP-BACKGROUND-VERIFICATION.json' }
+            )
+          }
+          foreach ($case in $cases) {
+            $phase = $case.Name
             $stdout = Join-Path $verifyDir ($phase + '.stdout.log')
             $stderr = Join-Path $verifyDir ($phase + '.stderr.log')
-            $arguments = @('--diagnostic', '--diagnostic-management', ('--diagnostic-dir="' + $verifyDir + '"'))
+            $arguments = @('--diagnostic') + $case.Extra + @('--diagnostic-dir="' + $verifyDir + '"')
             $testProcess = Start-Process -FilePath $executable -ArgumentList $arguments -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
             if (-not $testProcess.WaitForExit(180000)) { $testProcess.Kill(); Get-Content $stdout; Get-Content $stderr; throw ($phase + ' timed out') }
             Get-Content $stdout
             Get-Content $stderr
             if ($testProcess.ExitCode -ne 0) { throw ($phase + ' failed: ' + $testProcess.ExitCode) }
-            $report = Get-Content (Join-Path $verifyDir 'VERIFICATION-management.json') -Raw | ConvertFrom-Json
+            $report = Get-Content (Join-Path $verifyDir $case.Report) -Raw | ConvertFrom-Json
             if (-not $report.passed -or 'v' + $report.version -ne $env:RELEASE_TAG) { throw ($phase + ' did not pass for the release version') }
+            if ($phase -in @('reader', 'reader-restart')) {
+              if ($report.preview -or $report.platform -ne 'win32') { throw 'The installed read-only app is not the stable Windows release' }
+              if (-not $report.windowsTaskSchedulerTested) { throw 'The actual Windows Task Scheduler was not tested' }
+            }
             $reports += @{ phase = $phase; passed = $report.passed; checks = $report.checks }
           }
           $result = @{
             version = $manifest.version
             platform = 'win32-x64'
             runtimeTested = $true
+            windowsTaskSchedulerTested = ([version]$manifest.version -ge [version]'0.8.0')
+            liveOneNoteTested = $false
+            preview = $false
             passed = $true
             installerSha256 = $manifest.files.'win32-x64'.sha256
             workflowRun = ('https://github.com/' + $env:GITHUB_REPOSITORY + '/actions/runs/' + $env:GITHUB_RUN_ID)
