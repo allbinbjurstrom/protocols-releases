@@ -52,13 +52,17 @@ jobs:
           $manifest = Get-Content (Join-Path $packageDir 'preview-manifest.json') -Raw | ConvertFrom-Json
           $executable = Join-Path (Join-Path $env:RUNNER_TEMP 'protocols-preview-installed') 'Protocols Preview.exe'
           $fullDir = Join-Path $env:RUNNER_TEMP 'protocols-preview-full'
+          $desktopDir = Join-Path $env:RUNNER_TEMP 'protocols-preview-desktop'
           New-Item -ItemType Directory -Path $fullDir -Force | Out-Null
           Expand-Archive (Join-Path $packageDir 'verification-fixtures.zip') -DestinationPath $fullDir
           $cases = @(
             @{ Name = 'first-run'; Dir = $fullDir; Extra = @('--diagnostic-ai'); Report = 'VERIFICATION-first-run.json' },
             @{ Name = 'restart'; Dir = $fullDir; Extra = @('--diagnostic-ai'); Report = 'VERIFICATION-restart.json' },
             @{ Name = 'import'; Dir = (Join-Path $env:RUNNER_TEMP 'protocols-preview-import'); Extra = @('--diagnostic-import'); Report = 'IMPORT-VERIFICATION.json' },
-            @{ Name = 'ui'; Dir = (Join-Path $env:RUNNER_TEMP 'protocols-preview-ui'); Extra = @('--diagnostic-ui', '--diagnostic-ai'); Report = 'UI-VERIFICATION.json' }
+            @{ Name = 'ui'; Dir = (Join-Path $env:RUNNER_TEMP 'protocols-preview-ui'); Extra = @('--diagnostic-ui', '--diagnostic-ai'); Report = 'UI-VERIFICATION.json' },
+            @{ Name = 'management'; Dir = (Join-Path $env:RUNNER_TEMP 'protocols-preview-management'); Extra = @('--diagnostic-management'); Report = 'VERIFICATION-management.json' },
+            @{ Name = 'desktop'; Dir = $desktopDir; Extra = @('--diagnostic-desktop'); Report = 'DESKTOP-VERIFICATION.json' },
+            @{ Name = 'desktop-background'; Dir = $desktopDir; Extra = @('--diagnostic-desktop-background', '--onenote-background'); Report = 'DESKTOP-BACKGROUND-VERIFICATION.json' }
           )
           $reports = @()
           foreach ($case in $cases) {
@@ -74,6 +78,7 @@ jobs:
             $report = Get-Content (Join-Path $case.Dir $case.Report) -Raw | ConvertFrom-Json
             if (-not $report.passed -or $report.version -ne $manifest.version) { throw ($case.Name + ' failed for this version') }
             if ($case.Name -eq 'ui' -and (-not $report.preview -or $report.platform -ne 'win32')) { throw 'UI test did not run the Windows preview' }
+            if ($case.Name -eq 'desktop' -and (-not $report.windowsTaskSchedulerTested -or $report.platform -ne 'win32')) { throw 'The actual Windows Task Scheduler was not tested' }
             $reports += @{ phase = $case.Name; passed = $report.passed; checks = $report.checks }
           }
           $result = @{
@@ -81,6 +86,8 @@ jobs:
             preview = $true
             platform = 'win32-x64'
             runtimeTested = $true
+            windowsTaskSchedulerTested = $true
+            liveOneNoteTested = $false
             passed = $true
             installerSha256 = $manifest.files.'win32-x64'.sha256
             workflowRun = ('https://github.com/' + $env:GITHUB_REPOSITORY + '/actions/runs/' + $env:GITHUB_RUN_ID)
