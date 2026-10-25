@@ -6,12 +6,12 @@ on:
       previous_tag:
         description: Installed release to upgrade
         required: true
-        default: v0.5.2
+        default: v0.8.0
         type: string
       tag:
         description: New release to install
         required: true
-        default: v0.8.0
+        default: v0.8.1
         type: string
 
 permissions:
@@ -32,6 +32,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $checks = [System.Collections.Generic.List[string]]::new()
+          $readerSource = ([version]$env:PREVIOUS_TAG.TrimStart('v')) -ge [version]'0.8.0'
           function Assert-Check([bool]$condition, [string]$description) {
             if (-not $condition) { throw $description }
             $checks.Add($description)
@@ -51,7 +52,7 @@ jobs:
             return @{ file = $file; manifest = $manifest }
           }
           function Run-Installer([string]$file, [string[]]$installerArguments) {
-            $process = Start-Process -FilePath $file -ArgumentList $installerArguments -PassThru
+            $process = Start-Process -FilePath $file -ArgumentList $installerArguments -WindowStyle Hidden -PassThru
             if (-not $process.WaitForExit(180000)) { $process.Kill(); throw 'Installer timed out' }
             Assert-Check ($process.ExitCode -eq 0) ('Installer completed: ' + (Split-Path $file -Leaf))
             Get-Process -Name Protocols -ErrorAction SilentlyContinue | Stop-Process -Force
@@ -59,14 +60,20 @@ jobs:
           function Run-Diagnostic([string]$executable, [string]$folder, [string]$phase) {
             $stdout = Join-Path $env:RUNNER_TEMP ($phase + '.stdout.log')
             $stderr = Join-Path $env:RUNNER_TEMP ($phase + '.stderr.log')
-            if ($phase -eq 'first-run') {
+            if ($readerSource -and $phase -eq 'first-run') {
+              $arguments = @('--diagnostic', '--diagnostic-reader', ('--diagnostic-dir="' + $folder + '"'))
+              $reportName = 'READER-VERIFICATION.json'
+            } elseif ($readerSource) {
+              $arguments = @('--diagnostic', '--diagnostic-reader-restart', ('--diagnostic-dir="' + $folder + '"'))
+              $reportName = 'READER-RESTART-VERIFICATION.json'
+            } elseif ($phase -eq 'first-run') {
               $arguments = @('--diagnostic', '--diagnostic-ai', ('--diagnostic-dir="' + $folder + '"'))
               $reportName = 'VERIFICATION-first-run.json'
             } else {
               $arguments = @('--diagnostic', '--diagnostic-reader-migration', ('--diagnostic-dir="' + $folder + '"'))
               $reportName = 'READER-MIGRATION-VERIFICATION.json'
             }
-            $process = Start-Process -FilePath $executable -ArgumentList $arguments -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+            $process = Start-Process -FilePath $executable -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
             if (-not $process.WaitForExit(180000)) { $process.Kill(); Get-Content $stdout; Get-Content $stderr; throw ($phase + ' timed out') }
             Get-Content $stdout | Write-Host
             Get-Content $stderr | Write-Host
@@ -101,7 +108,7 @@ jobs:
           Set-Content $legacyMarker 'Remove files belonging to the previous app version' -Encoding utf8
 
           # No /D override: the new installer must find the existing installation.
-          Run-Installer $current.file @('/S')
+          Run-Installer $current.file @('/S', '--updated')
           Assert-Check (Test-Path $executable) 'Upgrade reuses the existing installation directory'
           Assert-Check ((Get-FileHash $appResources -Algorithm SHA256).Hash -ne $previousResourcesHash) 'Previous app resources replaced by the new release'
           Assert-Check (-not (Test-Path $legacyMarker)) 'Previous app files removed during upgrade'
@@ -124,12 +131,13 @@ jobs:
             passed = $true
             installerSha256 = $current.manifest.files.'win32-x64'.sha256
             previousInstallerSha256 = $previous.manifest.files.'win32-x64'.sha256
+            updaterInstallerArguments = @('/S', '--updated')
             checks = @($checks)
             beforeUpgrade = $beforeReport
             afterUpgrade = $afterReport
             workflowRun = ('https://github.com/' + $env:GITHUB_REPOSITORY + '/actions/runs/' + $env:GITHUB_RUN_ID)
           }
-          $reportFile = Join-Path $env:RUNNER_TEMP 'windows-upgrade-verification.json'
+          $reportFile = Join-Path $env:RUNNER_TEMP ('windows-upgrade-from-' + $previous.manifest.version + '-verification.json')
           $result | ConvertTo-Json -Depth 10 | Set-Content $reportFile -Encoding utf8
           gh release upload $env:RELEASE_TAG $reportFile --clobber
           if ($LASTEXITCODE -ne 0) { throw 'Uploading upgrade verification failed' }
