@@ -1,53 +1,31 @@
 # Protocols för Mac och Windows
 
-Projektchecklistor med lokal OneNote-import och automatisk Excel-uppföljning.
+Projektöversikt, checklistor och automatisk Excel-uppföljning.
 
-**[Senaste versionen: Protocols 0.5.1](https://github.com/allbinbjurstrom/protocols-releases/releases/tag/v0.5.1)**
+**[Windows 0.8.1 – OneDrive-mapp utan OneNote installerat](https://github.com/allbinbjurstrom/protocols-releases/releases/tag/v0.8.1)** är en manuell förhandsversion för Windows x64.
 
-- [Windows x64 – installationsfil](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.1/Protocols-0.5.1-Windows-x64-Setup.exe)
-- [Mac med Apple Silicon – packa upp appen](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.1/Protocols-0.5.1-Mac-arm64.zip)
-- [Installationsguide](INSTALLERA.txt)
+- [Ladda ner Windows 0.8.1](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.8.1/Protocols-0.8.1-Windows-x64-Setup.exe)
+- [Guide för OneDrive-mapp och Excel](INSTALLERA-ONEDRIVE.txt)
+- [Stabil version 0.8.0 för Mac och Windows](https://github.com/allbinbjurstrom/protocols-releases/releases/tag/v0.8.0)
 
-## Installera på Windows
+## Koppla en OneDrive-mapp i Windows 0.8.1
 
-Avsluta Protocols och kör installationsfilen i samma Windows-konto som tidigare.
-Den gamla programversionen tas bort automatiskt. Projekt, inställningar och
-lokala säkerhetskopior behålls.
+Öppna **Inställningar → OneDrive-mapp**, välj källmapp och Excel-mapp och klicka på **Aktivera och synka**. Källmappen behöver finnas lokalt i Utforskaren. OneNote och ett AI-konto behövs inte för mappkopplingen.
 
-Protocols 0.4.0 och senare kan även hämta nya versioner från
-**Inställningar → Appuppdateringar**. Uppdateringarna verifieras med en signerad
-filförteckning och SHA-256 innan de installeras.
+Protocols läser exporterade HTML-, MHT-, Word-, text-PDF- eller TXT-sidor enligt checklistmallen. Varje sida behöver projektnamn, unikt projektnummer, ansvarig och alla 21 kontrollpunkter. OneNotes egna .one-filer och genvägar kan inte läsas direkt. När en sida ändras i OneNote behöver även exportfilen uppdateras.
 
-## Arbeta med lokala projekt
+**Protocols-OneDrive.xlsx** samlar Översikt, Kontrollpunkter och Synkstatus. Privata arbetsanteckningar och det fullständiga källunderlaget utelämnas. Projekt och kontrollpunkter redigeras i källan. Låsta Excel-filer lämnas intakta; exporten kan göras om när filen har stängts.
 
-Börja med **Importera → OneNote** eller **Ny fil**. Klistra in checklistan eller
-välj en exporterad lokal OneNote-sida. Granska innehållet och spara projektet.
-Projekt, importerat underlag och privata arbetsanteckningar lagras lokalt och
-krypteras för datorkontot. Ingen Microsoft-appregistrering, tenant-ID eller
-app-ID behövs. Tidigare importerade projekt finns kvar efter uppgradering.
+Med appen öppen synkas mappen normalt var femte minut. Windows registrerar dessutom körning var tredje timme och efter inloggning, även med stängt appfönster. Datorn måste vara igång och kontot inloggat. OneDrive-klienten sköter molnsynkningen. Den befintliga OneNote-skrivbordskopplingen finns kvar som alternativ.
 
-Sidomenyn följer arbetets sju steg från import till **Gemensam Excel**.
-Sidorna Överblick, Huvudprojekt och direkt OneNote-anslutning har tagits bort.
-Appen öppnar det sparade projektet direkt vid start.
+## Installera och uppdatera
 
-## Ledningsöversikt och autosynk
+Stäng Protocols och kör installationsfilen i samma Windows-konto som tidigare. Appidentiteten och befintliga krypterade projekt behålls. Installationsfilen är ännu inte digitalt signerad; företagets IT kan behöva godkänna den.
 
-Öppna ledningsöversikten från **Inställningar**. Där finns även autosynk från en
-lokal eller OneDrive-synkad mapp med exporterade OneNote-checklistor. Välj
-källmapp, Excel-mapp och intervall. Synkningen körs medan appen är öppen.
-Varje objekt får en Excel-fil och Protocols-Ledningsoversikt.xlsx samlar
-uppföljningen. [Läs guiden](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.5.1/Ledningsoversikt.md).
+0.8.1 installeras manuellt. Den stabila uppdateringskanalen för Mac och Windows ligger kvar på 0.8.0 och använder sin befintliga signerade filförteckning. Denna version byter inte ut uppdaterarens publika nyckel eller signaturkrav.
 
-OneNote-exporterna kan vara HTML/HTM, MHT/MHTML, DOCX, PDF med text eller TXT
-med appens fullständiga checklistmall. .one-filer och OneNote-genvägar behöver
-exporteras först. Filer på OneDrive ska finnas tillgängliga lokalt.
+Lokala arbetsytor är krypterade för datorkontot. Excel-filer och exporterade säkerhetskopior är vanliga filer; välj mappar med lämplig åtkomst. Ingen Protocols-server eller månadsavgift behövs för mappsynkningen.
 
-## Valfri AI och lagring
+## Om repot
 
-Appen fungerar utan AI. Valfri ChatGPT-hjälp startas av användaren och kräver
-att förslagen granskas innan de sparas. Arbetsanteckningar, källtext och privata
-AI-utkast utelämnas från Excel och delbara sammanställningar.
-
-Windows-installationen saknar Authenticode-certifikat. Mac-appen är lokalt
-signerad men inte Apple-notariserad. Följ organisationens installationsrutin.
-Kontrollsummor finns i [SHA256SUMS.txt](SHA256SUMS.txt).
+Detta repo innehåller nedladdningar, guider och versionsinformation. Källkoden till appen publiceras inte här. Kontrollsummor och verifieringsresultat för varje version finns bland filerna på respektive versionssida.

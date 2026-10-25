@@ -1,0 +1,38 @@
+PROTOCOLS 0.8.1 – WINDOWS X64
+
+1. Stäng Protocols och kör Protocols-0.8.1-Windows-x64-Setup.exe.
+   Installera som ditt vanliga Windows-konto. Befintliga projekt behålls.
+   Installationsfilen är inte digitalt signerad. Företagets IT kan behöva godkänna den.
+
+2. Öppna Inställningar → OneDrive-mapp.
+
+3. Klicka på Välj OneDrive-mapp och välj mappen med exporterade checklistor.
+   Mappen ska finnas lokalt i Utforskaren. OneNote behöver inte vara installerat.
+   Välj gärna Behåll alltid på den här enheten i OneDrive för källmappen.
+
+4. Välj en separat Excel-mapp, exempelvis en annan mapp i samma OneDrive.
+   Excel-mappen kan också vara en egen undermapp till källmappen.
+
+5. Klicka på Aktivera och synka. Projekten visas i Projektöversikt och
+   Protocols-OneDrive.xlsx sparas i Excel-mappen. Öppna Excel visar filen.
+
+KÄLLFILER
+HTML, MHT, Word, PDF med text och TXT enligt checklistmallen fungerar.
+Varje sida behöver projektnamn, unikt projektnummer, ansvarig och 21 kontrollpunkter.
+OneNotes egna .one-filer, .onepkg och genvägar fungerar inte som exportsidor.
+När en sida ändras i OneNote behöver exportfilen i mappen uppdateras också.
+Appen ändrar inte källfilerna. Inga AI-konton eller Protocols-servrar behövs.
+
+SYNKNING
+Med appen öppen läses mappen normalt var femte minut. Windows kör dessutom
+synkningen var tredje timme och efter inloggning med stängt appfönster.
+Datorn måste vara igång och kontot inloggat. OneDrive sköter molnsynkningen.
+Synka nu kör samma flöde direkt. Om Excel är låst, stäng arbetsboken och försök igen.
+Privata arbetsanteckningar utelämnas från Excel. Excel-filen är en vanlig fil;
+välj en mapp med lämplig åtkomst för projektuppgifterna.
+
+OneNote och Excel finns kvar som alternativ för datorer med OneNote installerat.
+En källkoppling är aktiv åt gången. Projekt ändras i källdokumentet/exportfilen.
+
+Den här Windows-uppdateringen installeras manuellt. Den gemensamma stabila
+uppdateringskanalen för Mac och Windows ligger kvar på 0.8.0.
