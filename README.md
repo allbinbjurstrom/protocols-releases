@@ -2,11 +2,12 @@
 
 Projektöversikt, checklistor och automatisk Excel-uppföljning.
 
-**[Windows 0.8.1 – OneDrive-mapp utan OneNote installerat](https://github.com/allbinbjurstrom/protocols-releases/releases/tag/v0.8.1)** är en manuell förhandsversion för Windows x64.
+**[Senaste stabila versionen: Protocols 0.8.1](https://github.com/allbinbjurstrom/protocols-releases/releases/tag/v0.8.1)**
 
+- [Mac med Apple Silicon – 0.8.1](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.8.1/Protocols-0.8.1-Mac-arm64.zip)
 - [Ladda ner Windows 0.8.1](https://github.com/allbinbjurstrom/protocols-releases/releases/download/v0.8.1/Protocols-0.8.1-Windows-x64-Setup.exe)
 - [Guide för OneDrive-mapp och Excel](INSTALLERA-ONEDRIVE.txt)
-- [Stabil version 0.8.0 för Mac och Windows](https://github.com/allbinbjurstrom/protocols-releases/releases/tag/v0.8.0)
+- [Alla filer, kontrollsummor och verifieringsresultat](https://github.com/allbinbjurstrom/protocols-releases/releases/tag/v0.8.1)
 
 ## Koppla en OneDrive-mapp i Windows 0.8.1
 
@@ -22,7 +23,7 @@ Med appen öppen synkas mappen normalt var femte minut. Windows registrerar dess
 
 Stäng Protocols och kör installationsfilen i samma Windows-konto som tidigare. Appidentiteten och befintliga krypterade projekt behålls. Installationsfilen är ännu inte digitalt signerad; företagets IT kan behöva godkänna den.
 
-0.8.1 installeras manuellt. Den stabila uppdateringskanalen för Mac och Windows ligger kvar på 0.8.0 och använder sin befintliga signerade filförteckning. Denna version byter inte ut uppdaterarens publika nyckel eller signaturkrav.
+Protocols 0.8.1 levereras genom appens automatiska uppdatering på Mac och Windows. Öppna **Inställningar → Uppdateringar → Sök efter uppdateringar** för att hämta direkt. Med automatiska uppdateringar aktiverade hämtar appen paketet i bakgrunden och installerar när appen avslutas. Den befintliga signerade filförteckningen och SHA-256 verifieras före installation; uppdaterarens publika nyckel och signaturkrav behålls.
 
 Lokala arbetsytor är krypterade för datorkontot. Excel-filer och exporterade säkerhetskopior är vanliga filer; välj mappar med lämplig åtkomst. Ingen Protocols-server eller månadsavgift behövs för mappsynkningen.
 

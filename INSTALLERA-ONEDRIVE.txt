@@ -1,5 +1,11 @@
 PROTOCOLS 0.8.1 – WINDOWS X64
 
+HAR DU REDAN PROTOCOLS?
+Öppna Inställningar → Uppdateringar → Sök efter uppdateringar.
+Med automatiska uppdateringar aktiverade hämtas den nya versionen i bakgrunden
+och installeras när appen avslutas. Befintliga projekt och inställningar behålls.
+Installationsfilen nedan är ett alternativ för nyinstallation.
+
 1. Stäng Protocols och kör Protocols-0.8.1-Windows-x64-Setup.exe.
    Installera som ditt vanliga Windows-konto. Befintliga projekt behålls.
    Installationsfilen är inte digitalt signerad. Företagets IT kan behöva godkänna den.
@@ -34,5 +40,5 @@ välj en mapp med lämplig åtkomst för projektuppgifterna.
 OneNote och Excel finns kvar som alternativ för datorer med OneNote installerat.
 En källkoppling är aktiv åt gången. Projekt ändras i källdokumentet/exportfilen.
 
-Den här Windows-uppdateringen installeras manuellt. Den gemensamma stabila
-uppdateringskanalen för Mac och Windows ligger kvar på 0.8.0.
+Version 0.8.1 ligger i den vanliga stabila uppdateringskanalen för Mac och Windows.
+Appen verifierar befintlig uppdateringssignatur och SHA-256 före installation.
