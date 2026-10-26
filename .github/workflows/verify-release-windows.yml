@@ -64,17 +64,26 @@ jobs:
               @{ Name = 'desktop-background'; Extra = @('--diagnostic-desktop-background', '--onenote-background'); Report = 'DESKTOP-BACKGROUND-VERIFICATION.json' }
             )
           }
+          if ([version]$manifest.version -ge [version]'0.8.2') {
+            $linkedDir = Join-Path $env:RUNNER_TEMP 'protocols-linked-folder-verification'
+            $cases += @(
+              @{ Name = 'linked-folder'; Dir = $linkedDir; Extra = @('--diagnostic-folder-onenote'); Report = 'LINKED-FOLDER-VERIFICATION.json' },
+              @{ Name = 'linked-folder-restart'; Dir = $linkedDir; Extra = @('--diagnostic-folder-onenote', '--diagnostic-folder-restart'); Report = 'LINKED-FOLDER-RESTART.json' }
+            )
+          }
           foreach ($case in $cases) {
             $phase = $case.Name
-            $stdout = Join-Path $verifyDir ($phase + '.stdout.log')
-            $stderr = Join-Path $verifyDir ($phase + '.stderr.log')
-            $arguments = @('--diagnostic') + $case.Extra + @('--diagnostic-dir="' + $verifyDir + '"')
+            $caseDir = if ($case.Dir) { $case.Dir } else { $verifyDir }
+            New-Item -ItemType Directory -Path $caseDir -Force | Out-Null
+            $stdout = Join-Path $caseDir ($phase + '.stdout.log')
+            $stderr = Join-Path $caseDir ($phase + '.stderr.log')
+            $arguments = @('--diagnostic') + $case.Extra + @('--diagnostic-dir="' + $caseDir + '"')
             $testProcess = Start-Process -FilePath $executable -ArgumentList $arguments -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
             if (-not $testProcess.WaitForExit(180000)) { $testProcess.Kill(); Get-Content $stdout; Get-Content $stderr; throw ($phase + ' timed out') }
             Get-Content $stdout
             Get-Content $stderr
             if ($testProcess.ExitCode -ne 0) { throw ($phase + ' failed: ' + $testProcess.ExitCode) }
-            $report = Get-Content (Join-Path $verifyDir $case.Report) -Raw | ConvertFrom-Json
+            $report = Get-Content (Join-Path $caseDir $case.Report) -Raw | ConvertFrom-Json
             if (-not $report.passed -or 'v' + $report.version -ne $env:RELEASE_TAG) { throw ($phase + ' did not pass for the release version') }
             if ($phase -in @('reader', 'reader-restart')) {
               if ($report.preview -or $report.platform -ne 'win32') { throw 'The installed read-only app is not the stable Windows release' }
