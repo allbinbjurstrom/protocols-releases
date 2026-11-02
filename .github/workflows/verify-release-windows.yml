@@ -77,7 +77,7 @@ jobs:
             }
             $cases += @(
               @{ Name = 'workbook-grid'; Dir = (Join-Path $env:RUNNER_TEMP 'protocols-grid-verification'); Extra = @('--diagnostic-grid', '--diagnostic-headless'); Report = 'GRID-VERIFICATION.json' },
-              @{ Name = 'project-sheet'; Dir = (Join-Path $env:RUNNER_TEMP 'protocols-sheet-verification'); Extra = @('--diagnostic-sheet', '--diagnostic-headless'); Report = 'SHEET-VERIFICATION.json' },
+              @{ Name = 'project-sheet'; Dir = (Join-Path $env:RUNNER_TEMP 'protocols-sheet-verification'); Extra = @('--diagnostic-sheet', '--diagnostic-headless', '--diagnostic-guided'); Report = 'SHEET-VERIFICATION.json' },
               @{ Name = 'project-chat'; Dir = (Join-Path $env:RUNNER_TEMP 'protocols-chat-verification'); Extra = @('--diagnostic-chat', '--diagnostic-headless'); Report = 'CHAT-VERIFICATION.json' }
             )
           }
