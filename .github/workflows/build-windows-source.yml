@@ -42,15 +42,25 @@ jobs:
           Expand-Archive $archive -DestinationPath (Join-Path $env:RUNNER_TEMP 'protocols-source')
           $pkg = Get-Content (Join-Path $env:RUNNER_TEMP 'protocols-source/package.json') -Raw | ConvertFrom-Json
           if ('v' + $pkg.version -ne $env:RELEASE_TAG) { throw 'Source version mismatch' }
-      - name: Test actual Windows PowerShell transport and build installer
+      - name: Install build dependencies
         working-directory: ${{ runner.temp }}/protocols-source
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           npm ci --ignore-scripts --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { throw 'Dependency install failed' }
+      - name: Test actual Windows PowerShell transport
+        working-directory: ${{ runner.temp }}/protocols-source
+        timeout-minutes: 3
+        shell: pwsh
+        run: |
           npm test
           if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
+      - name: Build and upload Windows installer
+        working-directory: ${{ runner.temp }}/protocols-source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
           npm run build:windows
           if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
           $installer = 'dist/Protocols-' + $env:RELEASE_TAG.Substring(1) + '-Windows-x64-Setup.exe'
