@@ -1,0 +1,58 @@
+name: Build Protocols Windows from verified source
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Draft release tag
+        required: true
+        type: string
+      source_sha256:
+        description: SHA-256 of the source archive
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: allbinbjurstrom/protocols-releases
+      RELEASE_TAG: ${{ inputs.tag }}
+      SOURCE_SHA256: ${{ inputs.source_sha256 }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Download and verify application source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+[.][0-9]+[.][0-9]+$') { throw 'Invalid tag' }
+          if ($env:SOURCE_SHA256 -notmatch '^[a-f0-9]{64}$') { throw 'Invalid source hash' }
+          $name = 'Protocols-' + $env:RELEASE_TAG.Substring(1) + '-source.zip'
+          gh release download $env:RELEASE_TAG --pattern $name --dir $env:RUNNER_TEMP
+          if ($LASTEXITCODE -ne 0) { throw 'Source download failed' }
+          $archive = Join-Path $env:RUNNER_TEMP $name
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne $env:SOURCE_SHA256) { throw 'Source hash mismatch' }
+          Expand-Archive $archive -DestinationPath (Join-Path $env:RUNNER_TEMP 'protocols-source')
+          $pkg = Get-Content (Join-Path $env:RUNNER_TEMP 'protocols-source/package.json') -Raw | ConvertFrom-Json
+          if ('v' + $pkg.version -ne $env:RELEASE_TAG) { throw 'Source version mismatch' }
+      - name: Test actual Windows PowerShell transport and build installer
+        working-directory: ${{ runner.temp }}/protocols-source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          npm ci --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency install failed' }
+          npm test
+          if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
+          npm run build:windows
+          if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
+          $installer = 'dist/Protocols-' + $env:RELEASE_TAG.Substring(1) + '-Windows-x64-Setup.exe'
+          gh release upload $env:RELEASE_TAG $installer dist/windows-verification.json --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Installer upload failed' }
