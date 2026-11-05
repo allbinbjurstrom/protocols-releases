@@ -81,6 +81,13 @@ jobs:
               @{ Name = 'project-chat'; Dir = (Join-Path $env:RUNNER_TEMP 'protocols-chat-verification'); Extra = @('--diagnostic-chat', '--diagnostic-headless'); Report = 'CHAT-VERIFICATION.json' }
             )
           }
+          if ([version]$manifest.version -ge [version]'0.8.18') {
+            $notebookDir = Join-Path $env:RUNNER_TEMP 'protocols-notebook-verification'
+            $cases += @(
+              @{ Name = 'whole-notebook'; Dir = $notebookDir; Extra = @('--diagnostic-notebook', '--diagnostic-headless'); Report = 'NOTEBOOK-VERIFICATION.json' },
+              @{ Name = 'whole-notebook-restart'; Dir = $notebookDir; Extra = @('--diagnostic-notebook', '--diagnostic-notebook-restart', '--diagnostic-headless'); Report = 'NOTEBOOK-RESTART-VERIFICATION.json' }
+            )
+          }
           foreach ($case in $cases) {
             $phase = $case.Name
             $caseDir = if ($case.Dir) { $case.Dir } else { $verifyDir }
