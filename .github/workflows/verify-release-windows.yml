@@ -50,6 +50,12 @@ jobs:
           }
           npm ci --ignore-scripts --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { throw 'Dependency install failed' }
+          # Use a canonical test root rather than the runner's RUNNER~1 TEMP alias.
+          # Native folder selection resolves real paths; raw fixture paths must agree.
+          $unitTemp = Join-Path $env:RUNNER_TEMP 'protocols-unit-temp'
+          New-Item -ItemType Directory -Path $unitTemp -Force | Out-Null
+          $env:TEMP = $unitTemp
+          $env:TMP = $unitTemp
           $testFiles = @(Get-ChildItem -LiteralPath 'test' -Filter '*.test.cjs' -File | ForEach-Object { $_.FullName })
           node --test --test-reporter=tap @testFiles 2>&1 | Tee-Object -FilePath 'windows-unit-tests.log'
           $testExit = $LASTEXITCODE
@@ -64,6 +70,7 @@ jobs:
             command = 'node --test --test-reporter=tap test/*.test.cjs'
             sourceArchiveSha256 = $env:SOURCE_SHA256
             verifiedSourceFiles = $manifest.files.Count
+            canonicalTestTemporaryDirectory = $true
             counts = $counts
             workflowRun = ('https://github.com/' + $env:GITHUB_REPOSITORY + '/actions/runs/' + $env:GITHUB_RUN_ID)
           }
