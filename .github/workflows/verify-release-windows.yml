@@ -7,6 +7,10 @@ on:
         description: Draft release tag to verify
         required: true
         type: string
+      source_sha256:
+        description: SHA-256 of the draft source archive for unit tests (required from 0.8.18)
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -19,7 +23,54 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: allbinbjurstrom/protocols-releases
       RELEASE_TAG: ${{ inputs.tag }}
+      SOURCE_SHA256: ${{ inputs.source_sha256 }}
     steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify frozen source and run Windows unit tests
+        if: inputs.source_sha256 != ''
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+[.][0-9]+[.][0-9]+$') { throw 'Invalid release tag' }
+          if ($env:SOURCE_SHA256 -notmatch '^[a-f0-9]{64}$') { throw 'Invalid source hash' }
+          $name = 'Protocols-' + $env:RELEASE_TAG.Substring(1) + '-source.zip'
+          gh release download $env:RELEASE_TAG --pattern $name --dir $env:RUNNER_TEMP
+          if ($LASTEXITCODE -ne 0) { throw 'Source download failed' }
+          $archive = Join-Path $env:RUNNER_TEMP $name
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne $env:SOURCE_SHA256) { throw 'Source hash mismatch' }
+          $sourceDir = Join-Path $env:RUNNER_TEMP 'protocols-unit-source'
+          Expand-Archive $archive -DestinationPath $sourceDir
+          Set-Location $sourceDir
+          $manifest = Get-Content 'SOURCE-MANIFEST.json' -Raw | ConvertFrom-Json
+          if ('v' + $manifest.version -ne $env:RELEASE_TAG) { throw 'Source version mismatch' }
+          foreach ($file in $manifest.files) {
+            if ((Get-FileHash -LiteralPath $file.path -Algorithm SHA256).Hash.ToLowerInvariant() -cne $file.sha256) { throw ('Source file mismatch: ' + $file.path) }
+          }
+          npm ci --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency install failed' }
+          $testFiles = @(Get-ChildItem -LiteralPath 'test' -Filter '*.test.cjs' -File | ForEach-Object { $_.FullName })
+          node --test --test-reporter=tap @testFiles 2>&1 | Tee-Object -FilePath 'windows-unit-tests.log'
+          $testExit = $LASTEXITCODE
+          $counts = @{}
+          Get-Content 'windows-unit-tests.log' | ForEach-Object {
+            if ($_ -match '^# (tests|pass|fail|skipped) ([0-9]+)$') { $counts[$Matches[1]] = [int]$Matches[2] }
+          }
+          $result = @{
+            version = $manifest.version
+            platform = 'win32-x64'
+            passed = ($testExit -eq 0)
+            command = 'node --test --test-reporter=tap test/*.test.cjs'
+            sourceArchiveSha256 = $env:SOURCE_SHA256
+            verifiedSourceFiles = $manifest.files.Count
+            counts = $counts
+            workflowRun = ('https://github.com/' + $env:GITHUB_REPOSITORY + '/actions/runs/' + $env:GITHUB_RUN_ID)
+          }
+          $result | ConvertTo-Json -Depth 10 | Set-Content 'windows-unit-verification.json' -Encoding utf8
+          gh release upload $env:RELEASE_TAG 'windows-unit-verification.json' --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Unit verification upload failed' }
+          if ($testExit -ne 0) { throw ('Windows unit tests failed: ' + $testExit) }
       - name: Download and verify installer
         shell: pwsh
         run: |
@@ -31,6 +82,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Release download failed' }
           $manifest = Get-Content (Join-Path $packageDir 'update-manifest.json') -Raw | ConvertFrom-Json
           if ('v' + $manifest.version -ne $env:RELEASE_TAG) { throw 'Manifest version differs from tag' }
+          if ([version]$manifest.version -ge [version]'0.8.18' -and $env:SOURCE_SHA256 -notmatch '^[a-f0-9]{64}$') { throw 'Source verification is required for this release' }
           $expected = $manifest.files.'win32-x64'
           $installer = Join-Path $packageDir $expected.name
           if ((Get-Item $installer).Length -ne $expected.size) { throw 'Installer size mismatch' }
