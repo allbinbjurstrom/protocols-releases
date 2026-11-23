@@ -3,7 +3,7 @@ on:
   push:
     branches: [codex/package-folder-mac-0819]
 permissions:
-  contents: read
+  contents: write
 jobs:
   package:
     runs-on: macos-15
