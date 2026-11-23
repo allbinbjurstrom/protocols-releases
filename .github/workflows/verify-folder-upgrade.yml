@@ -3,7 +3,7 @@ on:
   push:
     branches: [codex/verify-folder-upgrade-0819]
 permissions:
-  contents: read
+  contents: write
 jobs:
   install-upgrade:
     runs-on: windows-latest
