@@ -1,0 +1,40 @@
+name: Prepare Protocols Mac package
+on:
+  push:
+    branches: [codex/package-folder-mac-0819]
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: allbinbjurstrom/protocols-releases
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build and verify the release candidate
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = arm64
+          gh release download v0.8.19 -p Protocols-0.8.19-source.zip
+          echo 'c15a8d3d6da67edc9bfa198ee2d31a0cf154861cd609646558ffd4f678430792  Protocols-0.8.19-source.zip' | shasum -a 256 -c -
+          unzip -q Protocols-0.8.19-source.zip -d src-app
+          cd src-app
+          npm ci --ignore-scripts --no-audit --no-fund
+          node --test test/photo-import-regressions.test.cjs test/folder-runtime.test.cjs test/import-formats.test.cjs
+          npm run build:mac -- --publish never
+          app=dist/mac-arm64/Protocols.app
+          codesign --verify --deep --strict "$app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")" = 0.8.19
+          "$app/Contents/MacOS/Protocols" --use-mock-keychain --diagnostic --diagnostic-grid --diagnostic-headless "--diagnostic-dir=$RUNNER_TEMP/grid"
+          test "$(jq -r .passed "$RUNNER_TEMP/grid/GRID-VERIFICATION.json")" = true
+          ditto -c -k --sequesterRsrc --keepParent "$app" ../Protocols-0.8.19-Mac-arm64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: protocols-0.8.19-mac-candidate
+          path: Protocols-0.8.19-Mac-arm64.zip
+          compression-level: 0
+          retention-days: 3
