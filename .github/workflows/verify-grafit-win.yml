@@ -1,7 +1,7 @@
 name: Verify folder sync installer and upgrade
 on:
   push:
-    branches: [codex/verify-grafit-0820]
+    branches: [codex/verify-dashboard-0821]
 permissions:
   contents: write
 jobs:
@@ -25,11 +25,11 @@ jobs:
           }
           $limit=(Get-Date).AddMinutes(8)
           do {
-            $assets=gh release view v0.8.20 --json assets --jq '.assets[].name'
-            if($assets -contains 'Protocols-0.8.20-Windows-x64-Setup.exe'){break}
+            $assets=gh release view v0.8.21 --json assets --jq '.assets[].name'
+            if($assets -contains 'Protocols-0.8.21-Windows-x64-Setup.exe'){break}
             Start-Sleep -Seconds 10
           } while((Get-Date) -lt $limit)
-          foreach($version in '0.8.18','0.8.20') {
+          foreach($version in '0.8.18','0.8.21') {
             $name="Protocols-$version-Windows-x64-Setup.exe"
             gh release download "v$version" -p $name
             CheckExit
@@ -37,9 +37,9 @@ jobs:
             $asset=$release.assets | Where-Object name -eq $name
             if(('sha256:'+(Get-FileHash $name).Hash.ToLowerInvariant()) -ne $asset.digest){throw 'Installer hash mismatch'}
           }
-          gh release download v0.8.20 -p Protocols-0.8.20-source.zip
+          gh release download v0.8.21 -p Protocols-0.8.21-source.zip
           CheckExit
-          Expand-Archive Protocols-0.8.20-source.zip -DestinationPath source
+          Expand-Archive Protocols-0.8.21-source.zip -DestinationPath source
           $fixtures=(Resolve-Path source/test/fixtures).Path
           $dest=Join-Path $env:RUNNER_TEMP 'protocols-installed'
           Run '.\Protocols-0.8.18-Windows-x64-Setup.exe' "/S /D=$dest"
@@ -50,14 +50,14 @@ jobs:
           $old=Get-Content "$workspace/SETUP-VERIFICATION.json" -Raw | ConvertFrom-Json
           if(!$old.passed -or $old.version -ne '0.8.18'){throw 'Old setup failed'}
           $before=(Get-FileHash "$workspace/workspace.bin").Hash
-          Run '.\Protocols-0.8.20-Windows-x64-Setup.exe' '/S --updated'
+          Run '.\Protocols-0.8.21-Windows-x64-Setup.exe' '/S --updated'
           if((Get-FileHash "$workspace/workspace.bin").Hash -ne $before){throw 'Installer changed saved workspace'}
           Run $exe "$argsOld --diagnostic-setup-restart"
           $restart=Get-Content "$workspace/SETUP-RESTART.json" -Raw | ConvertFrom-Json
-          if(!$restart.passed -or $restart.version -ne '0.8.20'){throw 'New app failed to open old projects'}
+          if(!$restart.passed -or $restart.version -ne '0.8.21'){throw 'New app failed to open old projects'}
           $fresh=Join-Path $env:RUNNER_TEMP 'fresh-workspace'
           Run $exe "--diagnostic --diagnostic-setup --diagnostic-same-folder --diagnostic-headless --diagnostic-dir=`"$fresh`" --setup-fixtures=`"$fixtures`""
           $report=Get-Content "$fresh/SETUP-VERIFICATION.json" -Raw | ConvertFrom-Json
-          if(!$report.passed -or $report.version -ne '0.8.20'){throw 'New setup failed'}
+          if(!$report.passed -or $report.version -ne '0.8.21'){throw 'New setup failed'}
           $report.checks
           $restart.checks

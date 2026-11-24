@@ -1,7 +1,7 @@
 name: Prepare Protocols Mac package
 on:
   push:
-    branches: [codex/verify-grafit-0820]
+    branches: [codex/verify-dashboard-0821]
 permissions:
   contents: write
 jobs:
@@ -19,17 +19,17 @@ jobs:
         run: |
           set -euo pipefail
           test "$(uname -m)" = arm64
-          gh release download v0.8.20 -p Protocols-0.8.20-source.zip
-          echo '407f56e4419dc5d6cffda50dcc83575d201dc8c3b6cde4d06f6b1f1f0549307d  Protocols-0.8.20-source.zip' | shasum -a 256 -c -
-          unzip -q Protocols-0.8.20-source.zip -d src-app
+          gh release download v0.8.21 -p Protocols-0.8.21-source.zip
+          echo 'a746c09048b9b86458958ddb1e7fab5c44e82909015fc6c4bd0baa69b6491192  Protocols-0.8.21-source.zip' | shasum -a 256 -c -
+          unzip -q Protocols-0.8.21-source.zip -d src-app
           cd src-app
           npm ci --ignore-scripts --no-audit --no-fund
           node --test test/photo-import-regressions.test.cjs test/folder-runtime.test.cjs test/import-formats.test.cjs
           npm run build:mac -- --publish never
           app=dist/mac-arm64/Protocols.app
           codesign --verify --deep --strict "$app"
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")" = 0.8.20
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")" = 0.8.21
           "$app/Contents/MacOS/Protocols" --use-mock-keychain --diagnostic --diagnostic-chat --diagnostic-headless "--diagnostic-dir=$RUNNER_TEMP/grid"
           test "$(jq -r .passed "$RUNNER_TEMP/grid/CHAT-VERIFICATION.json")" = true
-          ditto -c -k --sequesterRsrc --keepParent "$app" ../Protocols-0.8.20-Mac-arm64.zip
-          gh release upload v0.8.20 ../Protocols-0.8.20-Mac-arm64.zip "$RUNNER_TEMP/grid/CHAT-VERIFICATION.json#Mac app verification"
+          ditto -c -k --sequesterRsrc --keepParent "$app" ../Protocols-0.8.21-Mac-arm64.zip
+          gh release upload v0.8.21 ../Protocols-0.8.21-Mac-arm64.zip "$RUNNER_TEMP/grid/CHAT-VERIFICATION.json#Mac app verification"
