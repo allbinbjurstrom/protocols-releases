@@ -20,7 +20,7 @@ jobs:
           set -euo pipefail
           test "$(uname -m)" = arm64
           gh release download v0.8.21 -p Protocols-0.8.21-source.zip
-          echo 'a746c09048b9b86458958ddb1e7fab5c44e82909015fc6c4bd0baa69b6491192  Protocols-0.8.21-source.zip' | shasum -a 256 -c -
+          echo '84a983a285517c04a0d47f4e07e09ac534a6b529f66b4461c697f5b89a450351  Protocols-0.8.21-source.zip' | shasum -a 256 -c -
           unzip -q Protocols-0.8.21-source.zip -d src-app
           cd src-app
           npm ci --ignore-scripts --no-audit --no-fund
