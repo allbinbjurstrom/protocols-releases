@@ -26,6 +26,7 @@ jobs:
           cd source
           npm ci --ignore-scripts --no-audit --no-fund
           node --test test/photo-import-regressions.test.cjs test/folder-runtime.test.cjs test/import-formats.test.cjs test/field-onenote.test.cjs test/ux-regressions.test.cjs
+          node -e 'const fs=require("node:fs"), pkg=require("./package.json"); delete pkg.build.electronDist; fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));'
           npm run build:mac -- --publish never
           app=dist/mac-arm64/Protocols.app
           codesign --verify --deep --strict "$app"
@@ -33,8 +34,10 @@ jobs:
           "$app/Contents/MacOS/Protocols" --use-mock-keychain --diagnostic --diagnostic-chat --diagnostic-headless "--diagnostic-dir=$RUNNER_TEMP/chat"
           test "$(jq -r .passed "$RUNNER_TEMP/chat/CHAT-VERIFICATION.json")" = true
           ditto -c -k --sequesterRsrc --keepParent "$app" ../Protocols-0.8.22-Mac-arm64.zip
+          node -e 'require("./src/updates.cjs").prepareMac(process.argv[1], process.argv[2], "0.8.22").catch(error => { console.error(error); process.exitCode = 1; })' ../Protocols-0.8.22-Mac-arm64.zip "$RUNNER_TEMP/staged-update"
           gh release upload v0.8.22 ../Protocols-0.8.22-Mac-arm64.zip "$RUNNER_TEMP/chat/CHAT-VERIFICATION.json#Mac packaged app verification"
   windows:
+    if: ${{ !contains(github.event.head_commit.message, '[mac only]') }}
     runs-on: windows-latest
     timeout-minutes: 18
     steps:
