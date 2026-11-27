@@ -33,7 +33,7 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")" = 0.8.22
           "$app/Contents/MacOS/Protocols" --use-mock-keychain --diagnostic --diagnostic-chat --diagnostic-headless "--diagnostic-dir=$RUNNER_TEMP/chat"
           test "$(jq -r .passed "$RUNNER_TEMP/chat/CHAT-VERIFICATION.json")" = true
-          ditto -c -k --sequesterRsrc --keepParent "$app" ../Protocols-0.8.22-Mac-arm64.zip
+          (cd dist/mac-arm64 && /usr/bin/zip -q -r -y "../../../Protocols-0.8.22-Mac-arm64.zip" Protocols.app)
           node -e 'require("./src/updates.cjs").prepareMac(process.argv[1], process.argv[2], "0.8.22").catch(error => { console.error(error); process.exitCode = 1; })' ../Protocols-0.8.22-Mac-arm64.zip "$RUNNER_TEMP/staged-update"
           gh release upload v0.8.22 ../Protocols-0.8.22-Mac-arm64.zip "$RUNNER_TEMP/chat/CHAT-VERIFICATION.json#Mac packaged app verification"
   windows:
