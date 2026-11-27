@@ -1,0 +1,88 @@
+name: Verify Protocols 0.8.22 and package for Mac
+on:
+  push:
+    branches: [codex/verify-protocols-0822]
+permissions:
+  contents: write
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: allbinbjurstrom/protocols-releases
+jobs:
+  mac:
+    runs-on: macos-15
+    timeout-minutes: 18
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build and verify the Mac application
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = arm64
+          gh release download v0.8.22 -p Protocols-0.8.22-source.zip
+          echo '53dd14a60e4c7b58ea2a83a11baacd3edc024470d52c78485f175b4e51c01e1f  Protocols-0.8.22-source.zip' | shasum -a 256 -c -
+          mkdir source
+          unzip -q Protocols-0.8.22-source.zip -d source
+          cd source
+          npm ci --ignore-scripts --no-audit --no-fund
+          node --test test/photo-import-regressions.test.cjs test/folder-runtime.test.cjs test/import-formats.test.cjs test/field-onenote.test.cjs test/ux-regressions.test.cjs
+          npm run build:mac -- --publish never
+          app=dist/mac-arm64/Protocols.app
+          codesign --verify --deep --strict "$app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist")" = 0.8.22
+          "$app/Contents/MacOS/Protocols" --use-mock-keychain --diagnostic --diagnostic-chat --diagnostic-headless "--diagnostic-dir=$RUNNER_TEMP/chat"
+          test "$(jq -r .passed "$RUNNER_TEMP/chat/CHAT-VERIFICATION.json")" = true
+          ditto -c -k --sequesterRsrc --keepParent "$app" ../Protocols-0.8.22-Mac-arm64.zip
+          gh release upload v0.8.22 ../Protocols-0.8.22-Mac-arm64.zip "$RUNNER_TEMP/chat/CHAT-VERIFICATION.json#Mac packaged app verification"
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 18
+    steps:
+      - name: Verify the upgrade and OneNote shortcut flow
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $PSNativeCommandUseErrorActionPreference=$true
+          Set-Location $env:RUNNER_TEMP
+          function Run($exe,$arguments) {
+            $proc=Start-Process -FilePath $exe -ArgumentList $arguments -WindowStyle Hidden -PassThru
+            if(!$proc.WaitForExit(180000)){throw 'Process timed out'}
+            if($proc.ExitCode -ne 0){throw "Process exited with $($proc.ExitCode)"}
+          }
+          $limit=(Get-Date).AddMinutes(8)
+          do {
+            $assets=gh release view v0.8.22 --json assets --jq '.assets[].name'
+            if($assets -contains 'Protocols-0.8.22-Windows-x64-Setup.exe'){break}
+            Start-Sleep -Seconds 10
+          } while((Get-Date) -lt $limit)
+          foreach($version in '0.8.21','0.8.22') {
+            $name="Protocols-$version-Windows-x64-Setup.exe"
+            gh release download "v$version" -p $name
+            $release=gh release view "v$version" --json assets | ConvertFrom-Json
+            $asset=$release.assets | Where-Object name -eq $name
+            if(('sha256:'+(Get-FileHash $name).Hash.ToLowerInvariant()) -ne $asset.digest){throw 'Installer hash mismatch'}
+          }
+          gh release download v0.8.22 -p Protocols-0.8.22-source.zip
+          if((Get-FileHash Protocols-0.8.22-source.zip).Hash.ToLowerInvariant() -ne '53dd14a60e4c7b58ea2a83a11baacd3edc024470d52c78485f175b4e51c01e1f'){throw 'Source hash mismatch'}
+          Expand-Archive Protocols-0.8.22-source.zip -DestinationPath source
+          $fixtures=(Resolve-Path source/test/fixtures).Path
+          $dest=Join-Path $env:RUNNER_TEMP 'protocols-installed'
+          Run '.\Protocols-0.8.21-Windows-x64-Setup.exe' "/S /D=$dest"
+          $exe=Join-Path $dest 'Protocols.exe'
+          $workspace=Join-Path $env:RUNNER_TEMP 'upgrade-workspace'
+          $argsOld="--diagnostic --diagnostic-setup --diagnostic-headless --diagnostic-dir=`"$workspace`" --setup-fixtures=`"$fixtures`""
+          Run $exe $argsOld
+          $old=Get-Content "$workspace/SETUP-VERIFICATION.json" -Raw | ConvertFrom-Json
+          if(!$old.passed -or $old.version -ne '0.8.21'){throw 'Old setup failed'}
+          $before=(Get-FileHash "$workspace/workspace.bin").Hash
+          Run '.\Protocols-0.8.22-Windows-x64-Setup.exe' '/S --updated'
+          if((Get-FileHash "$workspace/workspace.bin").Hash -ne $before){throw 'Installer changed saved workspace'}
+          Run $exe "$argsOld --diagnostic-setup-restart"
+          $restart=Get-Content "$workspace/SETUP-RESTART.json" -Raw | ConvertFrom-Json
+          if(!$restart.passed -or $restart.version -ne '0.8.22'){throw 'New app failed to open old projects'}
+          $sharepoint=Join-Path $env:RUNNER_TEMP 'sharepoint'
+          $binding=Join-Path $env:RUNNER_TEMP 'binding'
+          Run $exe "--diagnostic --diagnostic-guided --diagnostic-sharepoint --diagnostic-headless --diagnostic-dir=`"$sharepoint`""
+          Run $exe "--diagnostic --diagnostic-guided --diagnostic-sharepoint --diagnostic-headless --test-binding --diagnostic-dir=`"$binding`""
+          Run $exe "--diagnostic --diagnostic-sharepoint --diagnostic-headless --test-binding --binding-restart --diagnostic-dir=`"$binding`""
+          $restart.checks
